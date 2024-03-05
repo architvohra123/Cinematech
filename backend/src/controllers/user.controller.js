@@ -3,103 +3,101 @@ import jsonwebtoken from "jsonwebtoken";
 import responseHandler from "../handlers/response.handler.js";
 
 const signup = async (req, res) => {
-    try{
-        const {username, password, displayName} = req.body;
-        
-        const checkUser = await userModel.findOne({ username })
+  try {
+    const { username, password, displayName } = req.body;
 
-        if(checkUser) return responseHandler.badrequest(res, "username already used")
+    const checkUser = await userModel.findOne({ username });
 
-        const user = new userModel()
+    if (checkUser) return responseHandler.badrequest(res, "username already used");
 
-        user.displayName = displayName
-        user.username = username
-        user.setPassword(password)
+    const user = new userModel();
 
-        await user.save();
+    user.displayName = displayName;
+    user.username = username;
+    user.setPassword(password);
 
-        const token = jsonwebtoken.sign(
-            { data: user.id },
-            process.env.TOKEN_SECRET,
-            { expiresIn: "24h" }
-        );
+    await user.save();
 
-        responseHandler.created(res, {
-            token,
-            ...user._doc,
-            id: user.id
-        })
+    const token = jsonwebtoken.sign(
+      { data: user.id },
+      process.env.TOKEN_SECRET,
+      { expiresIn: "24h" }
+    );
 
-    } catch{
-        responseHandler.error(res)
-    }
-}
+    responseHandler.created(res, {
+      token,
+      ...user._doc,
+      id: user.id
+    });
+  } catch {
+    responseHandler.error(res);
+  }
+};
 
 const signin = async (req, res) => {
-    try{
-        const { username, password } =req.body
+  try {
+    const { username, password } = req.body;
 
-        const user = await userModel.findOne({ username }).select("username password salt id displayName")
-             
-        if (!user) return responseHandler.badrequest(res, "User not exist")
+    const user = await userModel.findOne({ username }).select("username password salt id displayName");
 
-        if (!user.validPassword(password)) return responseHandler.badrequest(res, "Wrong password")
+    if (!user) return responseHandler.badrequest(res, "User not exist");
 
-        const token = jsonwebtoken.sign(
-            { data: user.id },
-            process.env.TOKEN_SECRET,
-            { expiresIn: "24h" }
-        );
+    if (!user.validPassword(password)) return responseHandler.badrequest(res, "Wrong password");
 
-        user.password = undefined
-        user.salt = undefined
+    const token = jsonwebtoken.sign(
+      { data: user.id },
+      process.env.TOKEN_SECRET,
+      { expiresIn: "24h" }
+    );
 
-        responseHandler.created(res, {
-            token,
-            ...user._doc,
-            id: user.id
-        })
+    user.password = undefined;
+    user.salt = undefined;
 
-    }catch{
-        responseHandler.error(res)
-    }
-}
+    responseHandler.created(res, {
+      token,
+      ...user._doc,
+      id: user.id
+    });
+  } catch {
+    responseHandler.error(res);
+  }
+};
 
 const updatePassword = async (req, res) => {
-    try{
-        const { password, newPassword } = req.body
-        
-        const user = await userModel.findById(req.user.id).select("password id salt")
-        
-        if(!user) return responseHandler.unauthorize(res)
+  try {
+    const { password, newPassword } = req.body;
 
-        if(!user.validPassword(password)) return responseHandler.badrequest(res, "Wrong Password")
+    const user = await userModel.findById(req.user.id).select("password id salt");
 
-        user.setPassword(newPassword)
+    if (!user) return responseHandler.unauthorize(res);
 
-        await user.save()
+    if (!user.validPassword(password)) return responseHandler.badrequest(res, "Wrong password");
 
-        responseHandler.ok(res);
-    } catch {
-        responseHandler.error(res)
-    }
+    user.setPassword(newPassword);
+
+    await user.save();
+
+    responseHandler.ok(res);
+  } catch {
+    responseHandler.error(res);
+  }
 };
 
 const getInfo = async (req, res) => {
-    try {
-        const user = await userModel.findById(req.user.id)
+  try {
+    const user = await userModel.findById(req.user.id);
 
-        if(!user) return responseHandler.notfound(res)
+    if (!user) return responseHandler.notfound(res);
 
-        responseHandler.ok(res, user);
-    } catch {
-        responseHandler.error(res)
-    }
-}
+    responseHandler.ok(res, user);
+  } catch {
+    responseHandler.error(res);
+  }
+};
 
-export default { 
-    signup,
-    signin,
-    getInfo,
-    updatePassword
+export default {
+  signup,
+  signin,
+  getInfo,
+  updatePassword
 };
