@@ -29,3 +29,5 @@ mongoose.connect(process.env.MONGODB_URL).then(() => {
   process.exit(1);
 });
 
+// deployed on vercel at 
+// https://cinematech-backend.vercel.app/
